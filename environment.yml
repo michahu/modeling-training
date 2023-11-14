@@ -118,6 +118,7 @@ dependencies:
   - zstd=1.5.4=hc292b87_0
   - pip:
       - accelerate==0.20.3
+      - hmmlearn>=0.3.0
       - aiohttp==3.8.4
       - aiosignal==1.3.1
       - apache-beam==2.48.0
@@ -177,5 +178,3 @@ dependencies:
       - xxhash==3.2.0
       - yarl==1.8.2
       - zstandard==0.21.0
-      - -e git+https://github.com/angie-chen55/PyTorch-Model-Compare.git#egg=torch-cka
-prefix: /ext3/miniconda3/envs/modeling-training

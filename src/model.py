@@ -18,7 +18,8 @@ def custom_weight_init(m, init_scaling):
         if m.bias is not None:
             m.bias.data *= init_scaling
 
-#Defining the convolutional neural network
+
+# Defining the convolutional neural network
 class LeNet5(nn.Module):
     def __init__(self, num_classes=10):
         super(LeNet5, self).__init__()
@@ -26,18 +27,20 @@ class LeNet5(nn.Module):
             nn.Conv2d(1, 6, kernel_size=5, stride=1, padding=0),
             nn.BatchNorm2d(6),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2))
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
         self.layer2 = nn.Sequential(
             nn.Conv2d(6, 16, kernel_size=5, stride=1, padding=0),
             nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size = 2, stride = 2))
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        )
         self.fc1 = nn.Linear(400, 120)
         self.relu = nn.ReLU()
         self.fc2 = nn.Linear(120, 84)
         self.relu1 = nn.ReLU()
         self.fc3 = nn.Linear(84, num_classes)
-        
+
     def forward(self, x):
         out = self.layer1(x)
         out = self.layer2(out)
@@ -49,11 +52,12 @@ class LeNet5(nn.Module):
         out = self.fc3(out)
         return out
 
+
 class MyBasicBlock(BasicBlock):
     def __init__(self, use_batch_norm, use_residual, **kwargs):
         self.use_batch_norm = use_batch_norm
         self.use_residual = use_residual
-        super().__init__( **kwargs)
+        super().__init__(**kwargs)
 
     def forward(self, x):
         identity = x
@@ -76,6 +80,7 @@ class MyBasicBlock(BasicBlock):
         out = self.relu(out)
 
         return out
+
 
 class MyResNet(ResNet):
     def __init__(self, use_batch_norm, use_residual, **kwargs):
@@ -101,14 +106,14 @@ class MyResNet(ResNet):
             block(
                 self.use_batch_norm,
                 self.use_residual,
-                inplanes=self.inplanes, 
-                planes=planes, 
-                stride=stride, 
-                downsample=downsample, 
-                groups=self.groups, 
-                base_width=self.base_width, 
-                dilation=previous_dilation, 
-                norm_layer=norm_layer
+                inplanes=self.inplanes,
+                planes=planes,
+                stride=stride,
+                downsample=downsample,
+                groups=self.groups,
+                base_width=self.base_width,
+                dilation=previous_dilation,
+                norm_layer=norm_layer,
             )
         )
         self.inplanes = planes * block.expansion
@@ -127,7 +132,7 @@ class MyResNet(ResNet):
             )
 
         return nn.Sequential(*layers)
-    
+
     def _forward_impl(self, x):
         x = self.conv1(x)
         if self.use_batch_norm:
@@ -163,7 +168,9 @@ class MLP(nn.Module):
         self.use_layer_norm = use_layer_norm
 
         if self.use_batch_norm and self.use_layer_norm:
-            raise ValueError("Only one of use_batch_norm and use_layer_norm can be True")
+            raise ValueError(
+                "Only one of use_batch_norm and use_layer_norm can be True"
+            )
 
         layers = []
         layers.append(nn.Linear(input_dim, hidden_dims[0]))
@@ -202,8 +209,6 @@ class MLP(nn.Module):
     def forward(self, x):
         x = self.layers(x)
         return x
-
-
 
 
 class HookPoint(nn.Module):
@@ -360,7 +365,9 @@ class FF(nn.Module):
 
 # export
 class TransformerBlock(nn.Module):
-    def __init__(self, d_model, d_mlp, d_head, num_heads, n_ctx, act_type, model, use_ln=False):
+    def __init__(
+        self, d_model, d_mlp, d_head, num_heads, n_ctx, act_type, model, use_ln=False
+    ):
         super().__init__()
         self.model = model
         self.ln1 = nn.LayerNorm(d_model)
@@ -389,7 +396,15 @@ class TransformerBlock(nn.Module):
 # | export
 class Transformer(nn.Module):
     def __init__(
-        self, d_model, d_head, d_vocab, num_heads, num_layers, n_ctx, act_type="ReLU", use_ln=False
+        self,
+        d_model,
+        d_head,
+        d_vocab,
+        num_heads,
+        num_layers,
+        n_ctx,
+        act_type="ReLU",
+        use_ln=False,
     ):
         """this function could be augmented to contain more options for creating different architectures"""
         super().__init__()
@@ -444,111 +459,6 @@ class Transformer(nn.Module):
             hp.add_hook(save_hook, "fwd")
             if incl_bwd:
                 hp.add_hook(save_hook_back, "bwd")
-
-
-# class PositionalEncoding(nn.Module):
-#     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):
-#         super().__init__()
-#         self.dropout = nn.Dropout(p=dropout)
-
-#         position = torch.arange(max_len).unsqueeze(1)
-#         div_term = torch.exp(
-#             torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
-#         )
-#         pe = torch.zeros(max_len, 1, d_model)
-#         pe[:, 0, 0::2] = torch.sin(position * div_term)
-#         pe[:, 0, 1::2] = torch.cos(position * div_term)
-#         self.register_buffer("pe", pe)
-
-#     def forward(self, x: Tensor) -> Tensor:
-#         """
-#         Args:
-#             x: Tensor, shape [seq_len, batch_size, embedding_dim]
-#         """
-#         x = x + self.pe[: x.size(0)]
-#         return self.dropout(x)
-
-
-# class PositionalEncoding(nn.Module):
-#     def __init__(self, max_ctx, d_model):
-#         super().__init__()
-#         self.W_pos = nn.Parameter(torch.randn(max_ctx, d_model) / np.sqrt(d_model))
-
-#     def forward(self, x):
-#         return x + self.W_pos[: x.shape[-2]]
-
-
-# class TransformerModel(nn.Module):
-#     def __init__(
-#         self,
-#         ntokens: int,
-#         d_model: int,
-#         nhead: int,
-#         nlayers: int,
-#         dropout: float = 0.5,
-#     ):
-#         super(TransformerModel, self).__init__()
-#         self.pos_encoder = PositionalEncoding(3, d_model)
-#         encoder_layer = TransformerBlock(d_model, nhead, dropout)
-#         self.layers = nn.ModuleList([encoder_layer for _ in range(nlayers)])
-
-#         self.encoder = nn.Embedding(ntokens, d_model)
-#         self.d_model = d_model
-#         self.decoder = nn.Linear(d_model, ntokens)
-
-#         self.init_weights()
-
-#     def init_weights(self) -> None:
-#         initrange = 0.1
-#         self.encoder.weight.data.uniform_(-initrange, initrange)
-#         self.decoder.bias.data.zero_()
-#         self.decoder.weight.data.uniform_(-initrange, initrange)
-
-#     def forward(self, src: Tensor) -> Tensor:
-#         """
-#         Args:
-#             src: Tensor, shape [seq_len, batch_size]
-#             src_mask: Tensor, shape [seq_len, seq_len]
-
-#         Returns:
-#             output Tensor of shape [seq_len, batch_size, ntoken]
-#         """
-#         src = self.encoder(src)  # * math.sqrt(self.d_model)
-#         src = self.pos_encoder(src)
-
-#         for layer in self.layers:
-#             src = layer(src)
-
-#         output = self.decoder(src)
-#         return output
-
-
-# class TransformerBlock(nn.Module):
-#     def __init__(self, hidden_size, num_heads, dropout=0.1):
-#         super(TransformerBlock, self).__init__()
-
-#         self.attention = nn.MultiheadAttention(hidden_size, num_heads)
-
-#         # self.dropout = nn.Dropout(dropout)
-#         self.norm1 = nn.LayerNorm(hidden_size)
-
-#         self.fc = nn.Sequential(
-#             nn.Linear(hidden_size, 4 * hidden_size),
-#             nn.GELU(),
-#             nn.Linear(4 * hidden_size, hidden_size),
-#             # nn.Dropout(0.1),
-#         )
-#         self.norm2 = nn.LayerNorm(hidden_size)
-
-#     def forward(self, x):
-#         attended = self.attention(x, x, x)[0]
-#         # x = x + self.dropout(attended)
-#         # x = self.norm1(x)
-
-#         fc_output = self.fc(x)
-#         # x = x + self.dropout2(fc_output)
-#         # x = self.norm2(x)
-#         return x
 
 
 # from https://github.com/ejmichaud/grokking-squared/blob/0229df94de69b8384e560367280a43a238112bf5/notebooks/erics-implementation.ipynb

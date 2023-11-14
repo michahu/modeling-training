@@ -22,7 +22,7 @@ from src.metrics import get_metrics_mlp
 DATASET_NAME = "sparse-parities"
 
 
-# %%
+# note: MultiMarginLoss in PyTorch is awkward to use because it is multiclass
 class HingeLoss(torch.nn.Module):
     def __init__(self):
         super(HingeLoss, self).__init__()
@@ -33,8 +33,12 @@ class HingeLoss(torch.nn.Module):
         return hinge_loss
 
 
-def get_dataloaders(train_size, test_size, train_bsz, test_bsz):
-    data = SparseParity(train_size + test_size, 40, 3)
+def get_dataloaders(
+    train_size, test_size, train_bsz, test_bsz, total_bits=40, parity_bits=3
+):
+    data = SparseParity(
+        train_size + test_size, total_bits=total_bits, parity_bits=parity_bits
+    )
     train, test = torch.utils.data.random_split(data, [train_size, test_size])
     train_dataloader = torch.utils.data.DataLoader(
         train, shuffle=True, batch_size=train_bsz
@@ -60,7 +64,7 @@ def train(**config):
     optim_name = config["optim_name"]
     output_dir = config["output_dir"]
     eval_every = config["eval_every"]
-    wandb = config['wandb']
+    wandb = config["wandb"]
     init_scaling = config["init_scaling"]
     use_batch_norm = config["use_batch_norm"]
     clip_grad = config["clip_grad"]
@@ -83,10 +87,10 @@ def train(**config):
     )
 
     model = MLP(
-        input_dim=40, 
+        input_dim=40,
         hidden_dims=[hidden_dim],
         output_dim=1,
-        kaiming_uniform=False, 
+        kaiming_uniform=False,
         use_batch_norm=use_batch_norm,
         use_layer_norm=use_ln,
     )
@@ -118,7 +122,9 @@ def train(**config):
         "accuracy", experiment_id=DATASET_NAME, keep_in_memory=True
     )
 
-    run_output_dir = os.path.join(output_dir, f"lr{lr}_{optim_name}_seed{seed}_scaling{init_scaling}")
+    run_output_dir = os.path.join(
+        output_dir, f"lr{lr}_{optim_name}_seed{seed}_scaling{init_scaling}"
+    )
     if not os.path.exists(os.path.join(run_output_dir)):
         os.makedirs(os.path.join(run_output_dir))
 
@@ -161,8 +167,8 @@ def train(**config):
                     )
                     test_accuracy.add_batch(predictions=predictions, references=y)
 
-            train_loss = train_loss / len(train_dataloader) 
-            eval_loss = eval_loss / len(test_dataloader) 
+            train_loss = train_loss / len(train_dataloader)
+            eval_loss = eval_loss / len(test_dataloader)
             train_accuracy_metric = train_accuracy.compute()
             test_accuracy_metric = test_accuracy.compute()
 
@@ -183,9 +189,7 @@ def train(**config):
             data["eval_accuracy"] = test_accuracy_metric
 
             with open(
-                os.path.join(
-                    run_output_dir, f"epoch{epoch}.json"
-                ),
+                os.path.join(run_output_dir, f"epoch{epoch}.json"),
                 "w",
             ) as f:
                 json.dump(data, f)
@@ -215,7 +219,9 @@ def main():
     parser.add_argument("--test_bsz", type=int, default=100)
     parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument("--cpu", action="store_true")
-    parser.add_argument("--optim_name", type=str, default="sgd")
+    parser.add_argument(
+        "--optim_name", type=str, default="sgd", choices=["adamw", "sgd"]
+    )
     parser.add_argument("--eval_every", type=int, default=10)
     parser.add_argument("--wandb", action="store_true")
     parser.add_argument("--use_batch_norm", action="store_true")

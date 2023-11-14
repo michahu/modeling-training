@@ -93,8 +93,8 @@ def plot_avg_log_likelihood(data, dataset_name, output_file, max_components=8):
 
     ax.legend(handles=handles + ax2.lines, loc="lower right")
     ax.set_xlabel("Number of HMM components")
-    ax.set_ylabel("Average log density (higher is better)")
-    ax2.set_ylabel("AIC/BIC (lower is better)")
+    ax.set_ylabel("Average log density $\uparrow$")
+    ax2.set_ylabel("AIC/BIC $\downarrow$")
     fig.suptitle(f"{dataset_name}")
     fig.savefig(f"{output_file}.png", bbox_inches="tight")
 
@@ -117,8 +117,6 @@ def main(
             "spectral",
             "code_sparsity",
             "computational_sparsity",
-            # "mean_singular_value",
-            # "var_singular_value",
             "mean_lambda",
             "variance_lambda",
             "mean_w",
@@ -175,13 +173,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data_dir", type=str, required=True, help="Path to data, expecting csvs"
     )
-    parser.add_argument("--output_file", type=str, default="./output/hmm_data")
+    parser.add_argument("--output_file", type=str, default="./output/hmm_data", help=".png is appended to the path automatically")
     parser.add_argument("--dataset_name", type=str, default="hmm_data")
-    parser.add_argument("--cov_type", type=str, default="diag")
+    parser.add_argument("--cov_type", type=str, default="diag", choices=['diag', 'full'])
     parser.add_argument("--num_iters", type=int, default=10)
     parser.add_argument("--first_n", type=int, default=1000)
     parser.add_argument("--max_components", type=int, default=8)
-    parser.add_argument("--exp_type", type=str, default="base")
+    parser.add_argument("--exp_type", type=str, default="base", choices=['base', 'ablation', 'ablation2', 'ablation3', 'modular_best', 'parities_best'])
     args = parser.parse_args()
     main(
         args.data_dir,

@@ -48,7 +48,7 @@ pythom -m scripts.01_checkpoints_to_stats.compute_stats --model_dir <path/to/dow
 
 ## Step 2: Collate statistics into 1 file.
 
-Take the stats computed in step 0 or step 1 and organize them into CSVs suitable for training the HMM. `--has_loss` is for cases. `--exp_type` exists to handle the logging of hyperparameters; see code.
+Take the stats computed in step 0 or step 1 and organize them into CSVs suitable for training the HMM. `--has_loss` is for cases. `--exp_type` exists to handle the logging of hyperparameters. Valid `exp_type` values include `["modular", "parities", "mnist", "cnn"]` from Step 0.
 ```bash
 python -m scripts.02_stats_to_data.training_run_json_to_csv 
 --input_dir <path/to/step/0/files>  --save_dir $save_dir --has_loss --exp_type $exp_type 

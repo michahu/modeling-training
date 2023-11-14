@@ -26,7 +26,7 @@ def calculate_cka_pair(model1, model1_name, model2, model2_name, dataloader):
 
 def parse_args(input_args):
     parser = argparse.ArgumentParser(
-        description="Load all checkpoints for an MLM training run and compute TVD between all pairs."
+        description="Load all checkpoints for an MLM training run and compute CKA between all pairs."
     )
     parser.add_argument("--max-sequence-length", type=int, default=512)
     parser.add_argument(
@@ -57,11 +57,7 @@ def parse_args(input_args):
         default="warning",
         help="Provide logging level. Example --loglevel debug, default=warning",
     )
-    parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="/scratch/ac5968/modeling-training/",
-    )
+    parser.add_argument("--output-dir", type=str)
     parser.add_argument(
         "--output-filename-prefix",
         type=str,
@@ -70,7 +66,6 @@ def parse_args(input_args):
     )
     parser.add_argument(
         "--pretraining-data-dir",
-        default="/scratch/myh2014/modeling-training/data/tokenized_bert_data",
         help="Directory containing Wikipedia pre-training data.",
     )
     parser.add_argument("--batch-size", type=int, default=10)

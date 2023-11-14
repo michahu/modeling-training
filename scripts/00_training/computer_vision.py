@@ -27,9 +27,16 @@ from src.model import MyResNet, MyBasicBlock
 # %%
 # replicating https://arxiv.org/pdf/2210.01117.pdf
 
+MNIST_MEAN=(0.1307,)
+MNIST_STD=(0.3081,)
+
+CIFAR100_MEAN=(0.5071, 0.4867, 0.4408)
+CIFAR100_STD=(0.2675, 0.2565, 0.2761)
+CIFAR_STATS=(CIFAR100_MEAN, CIFAR100_STD)
+
 
 # %%
-def get_dataloaders(dataset_name, model_name, train_bsz, test_bsz, train_subsample):
+def get_dataloaders(dataset_name, model_name, train_bsz, test_bsz, num_workers=4):
     if dataset_name == 'mnist':
         if model_name == 'mlp':
             transform = transforms.Compose([transforms.ToTensor(), transforms.Lambda(lambda x: torch.flatten(x))])
@@ -37,15 +44,13 @@ def get_dataloaders(dataset_name, model_name, train_bsz, test_bsz, train_subsamp
             transform = transforms.Compose([
                 transforms.Resize((32,32)),
                 transforms.ToTensor(),
-                transforms.Normalize(mean = (0.1307,), std = (0.3081,)),
+                transforms.Normalize(mean = MNIST_MEAN, std = MNIST_STD), # known mean and std for mnist
             ])
         train_data = datasets.MNIST(
             "./data", train=True, download=True, transform=transform
         )
-        # to induce grokking, subsample the training data
-        # train_data, _ = torch.utils.data.random_split(
-        #     train_data, [train_subsample, 60000 - train_subsample]
-        # )
+
+        # you can switch "./data" to your download directory of choice 
         test_data = datasets.MNIST("./data", train=False, transform=transform)
 
     elif dataset_name == 'cifar100':
@@ -56,14 +61,13 @@ def get_dataloaders(dataset_name, model_name, train_bsz, test_bsz, train_subsamp
         x = np.concatenate([np.asarray(train_data[i][0]) for i in range(len(train_data))])
 
         # calculate the mean and std along the (0, 1) axes
-        stats = ((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761))
         # preprocessing taken from https://www.kaggle.com/code/yiweiwangau/cifar-100-resnet-pytorch-75-17-accuracy
         # https://jovian.com/kumar-shailesh1597/cifar100-resnet18
         transform_train = transforms.Compose([transforms.RandomCrop(32, padding=4,padding_mode='reflect'), 
                          transforms.RandomHorizontalFlip(), 
                          transforms.ToTensor(), 
-                         transforms.Normalize(*stats,inplace=True)])
-        transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize(*stats)])
+                         transforms.Normalize(*CIFAR_STATS,inplace=True)])
+        transform_test = transforms.Compose([transforms.ToTensor(), transforms.Normalize(*CIFAR_STATS)])
 
         # reload train data, processing this time with transform
         train_data = datasets.CIFAR100("./data",
@@ -76,10 +80,10 @@ def get_dataloaders(dataset_name, model_name, train_bsz, test_bsz, train_subsamp
         raise ValueError(f"unsupported dataset {dataset_name}")
 
     train_dataloader = torch.utils.data.DataLoader(
-        train_data, batch_size=train_bsz, shuffle=True, num_workers=4, pin_memory=True
+        train_data, batch_size=train_bsz, shuffle=True, num_workers=num_workers, pin_memory=True
     )
     test_dataloader = torch.utils.data.DataLoader(
-        test_data, batch_size=test_bsz, shuffle=False, num_workers=4, pin_memory=True
+        test_data, batch_size=test_bsz, shuffle=False, num_workers=num_workers, pin_memory=True
     )
 
     return train_dataloader, test_dataloader
@@ -91,6 +95,7 @@ def train(**config):
     hidden_dims = config["hidden_dims"]
     output_dim = config["output_dim"]
     num_epochs = config["num_epochs"]
+    num_workers = config["num_workers"]
     lr = config["lr"]
     init_scaling = config["init_scaling"]
     train_bsz = config["train_bsz"]
@@ -106,9 +111,6 @@ def train(**config):
     use_batch_norm = config['use_batch_norm']
     use_residual = config['use_residual']
     test_bsz = train_bsz * 2
-
-    if dataset_name != 'mnist' and dataset_name != 'cifar100':
-        raise ValueError(f"unsupported dataset {dataset_name}")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -138,7 +140,7 @@ def train(**config):
     accelerator = Accelerator(cpu=cpu)  # , mixed_precision="fp16")
 
     train_dataloader, test_dataloader = get_dataloaders(
-        dataset_name, model_name, train_bsz=train_bsz, test_bsz=test_bsz, train_subsample=train_subsample
+        dataset_name, model_name, train_bsz=train_bsz, test_bsz=test_bsz, num_workers=num_workers
     )  # eval bsz doesn't matter
 
     # only resnet18 works for cifar100
@@ -206,7 +208,6 @@ def train(**config):
 
             loss.backward()
 
-            # nn.utils.clip_grad_value_(model.parameters(), 0.1)
             optimizer.step()
             optimizer.zero_grad()
 
@@ -275,6 +276,7 @@ def train(**config):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output_dir", type=str, default="output")
+    parser.add_argument("--num_workers", type=int, default=4)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--num_epochs", type=int, default=100)
@@ -287,8 +289,8 @@ def main():
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--eval_every", type=int, default=20)
     parser.add_argument("--wandb", action="store_true")
-    parser.add_argument("--dataset_name", type=str, default="mnist")
-    parser.add_argument("--model_name", type=str, default="resnet18")
+    parser.add_argument("--dataset_name", type=str, default="mnist", choices=['mnist', 'cifar100'])
+    parser.add_argument("--model_name", type=str, default="resnet18", choices=['mlp', 'lenet', 'resnet18'])
     parser.add_argument("--use_batch_norm", action="store_true")
     parser.add_argument("--use_residual", action="store_true")
     args = parser.parse_args()

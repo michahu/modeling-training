@@ -13,9 +13,9 @@ from graphviz import Digraph
 
 def get_markov_chain(matrix):
     n = matrix.shape[0]
-    dot = Digraph(comment='Markov Chain')
-    dot.attr(rankdir='LR', size='8,5')
-    dot.attr('node', shape='circle')
+    dot = Digraph(comment="Markov Chain")
+    dot.attr(rankdir="LR", size="8,5")
+    dot.attr("node", shape="circle")
 
     for i in range(n):
         for j in range(n):
@@ -51,7 +51,7 @@ def make_hmm_data(data_dir, cols, sort=True, first_n=1000):
             for file in glob.glob(data_dir + "*")
         ]
 
-    dfs = [df for df in dfs if not df.isnull().values.any()] # remove invalid dfs
+    dfs = [df for df in dfs if not df.isnull().values.any()]  # remove invalid dfs
 
     train_dfs, test_dfs = train_test_split(dfs, test_size=0.2, random_state=0)
 
@@ -67,7 +67,6 @@ def make_hmm_data(data_dir, cols, sort=True, first_n=1000):
 
 def unpack_vals(
     subsample,
-
     l1,
     l2,
     trace,
@@ -86,11 +85,14 @@ def unpack_vals(
     mean_lambda.append(subsample["mean_singular_value"])
     var_lambda.append(subsample["var_singular_value"])
 
+
 # TODO: delete this function, fold into cnn method
 def get_stats_for_run(file_pths, is_transformer, has_loss=False):
     buf = defaultdict(list)
 
     for file_pth in file_pths:
+        # logging formats have been inconsistent
+
         # name format: stats_{seed}_{step}.json
         # step = int(os.path.basename(file_pth).split("_")[-1].split(".")[0])
 
@@ -99,7 +101,7 @@ def get_stats_for_run(file_pths, is_transformer, has_loss=False):
 
         # name format: stats_{step}_losses.json
         # step = int(os.path.basename(file_pth).split("_")[1])
-        
+
         # name format: epoch{step}.json
         step = int(os.path.basename(file_pth).split(".")[0].split("epoch")[1])
 
@@ -187,19 +189,19 @@ def get_stats_for_run(file_pths, is_transformer, has_loss=False):
         buf["step"].append(step)
 
         if has_loss:
-            buf['train_loss'].append(data['train_loss'])
-            buf['eval_loss'].append(data['eval_loss'])
-            buf['train_accuracy'].append(data['train_accuracy']['accuracy'])
-            buf['eval_accuracy'].append(data['eval_accuracy']['accuracy'])
+            buf["train_loss"].append(data["train_loss"])
+            buf["eval_loss"].append(data["eval_loss"])
+            buf["train_accuracy"].append(data["train_accuracy"]["accuracy"])
+            buf["eval_accuracy"].append(data["eval_accuracy"]["accuracy"])
 
     return buf
+
 
 def get_stats_for_cnn(file_pths, has_loss=False):
     # holds the csv data
     buf = defaultdict(list)
 
     for file_pth in file_pths:
-
         # name format: step{step}.json
         step = int(os.path.basename(file_pth).split(".")[0].split("step")[1])
 
@@ -208,7 +210,7 @@ def get_stats_for_cnn(file_pths, has_loss=False):
         with open(file_pth, "r") as f:
             data = json.loads(f.read())
             samples = data["w"]
-        
+
         for sample in samples:
             for key, val in sample.items():
                 if isinstance(val, list):
@@ -219,7 +221,7 @@ def get_stats_for_cnn(file_pths, has_loss=False):
         for key, val in buffer_dict.items():
             buf[key].append(np.mean(val))
 
-        del buf["singular_values"] 
+        del buf["singular_values"]
 
         # global stats
         mean_w = data["w_all"]["mean"]
@@ -239,9 +241,9 @@ def get_stats_for_cnn(file_pths, has_loss=False):
         buf["step"].append(step)
 
         if has_loss:
-            buf['train_loss'].append(data['train_loss'])
-            buf['eval_loss'].append(data['eval_loss'])
-            buf['train_accuracy'].append(data['train_accuracy']['accuracy'])
-            buf['eval_accuracy'].append(data['eval_accuracy']['accuracy'])
+            buf["train_loss"].append(data["train_loss"])
+            buf["eval_loss"].append(data["eval_loss"])
+            buf["train_accuracy"].append(data["train_accuracy"]["accuracy"])
+            buf["eval_accuracy"].append(data["eval_accuracy"]["accuracy"])
 
     return buf

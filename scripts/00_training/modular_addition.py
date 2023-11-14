@@ -53,8 +53,8 @@ def train(**config):
     optim_name = config["optimizer"]
     output_dir = config["output_dir"]
     seed = config["seed"]
-    wandb = config['wandb']
-    use_ln = config['use_ln']
+    wandb = config["wandb"]
+    use_ln = config["use_ln"]
     test_bsz = 2048
     clip_grad = config["clip_grad"]
 
@@ -69,14 +69,22 @@ def train(**config):
     accelerator = Accelerator(cpu=cpu)  # , mixed_precision="fp16")
     device = accelerator.device
 
-    train_dataloader, test_dataloader = get_dataloaders(train_bsz=train_bsz, test_bsz=test_bsz)
+    train_dataloader, test_dataloader = get_dataloaders(
+        train_bsz=train_bsz, test_bsz=test_bsz
+    )
 
     model = Transformer(
-        d_model=128, d_head=32, d_vocab=114, num_heads=nheads, num_layers=1, n_ctx=3, use_ln=use_ln
+        d_model=128,
+        d_head=32,
+        d_vocab=114,
+        num_heads=nheads,
+        num_layers=1,
+        n_ctx=3,
+        use_ln=use_ln,
     )
-    
+
     # model.apply(lambda m: custom_weight_init(m, init_scaling=init_scaling))
-    
+
     for p in model.parameters():
         p.data *= init_scaling
 
@@ -104,7 +112,9 @@ def train(**config):
     )
 
     # create output dir if it doesn't exist
-    run_output_dir = os.path.join(output_dir, f"lr{lr}_{optim_name}_seed{seed}_scaling{init_scaling}")
+    run_output_dir = os.path.join(
+        output_dir, f"lr{lr}_{optim_name}_seed{seed}_scaling{init_scaling}"
+    )
     if not os.path.exists(os.path.join(run_output_dir)):
         os.makedirs(os.path.join(run_output_dir))
 
@@ -120,7 +130,7 @@ def train(**config):
 
             if clip_grad:
                 torch.nn.utils.clip_grad_norm_(model.parameters(), lr * 10)
-            
+
             optimizer.step()
             optimizer.zero_grad()
 
@@ -143,8 +153,8 @@ def train(**config):
                     predictions, y = accelerator.gather_for_metrics((predictions, y))
                     test_accuracy.add_batch(predictions=predictions, references=y)
 
-            train_loss = train_loss / len(train_dataloader) 
-            eval_loss = eval_loss / len(test_dataloader) 
+            train_loss = train_loss / len(train_dataloader)
+            eval_loss = eval_loss / len(test_dataloader)
             train_accuracy_metric = train_accuracy.compute()
             test_accuracy_metric = test_accuracy.compute()
 
@@ -166,9 +176,7 @@ def train(**config):
             data["eval_accuracy"] = test_accuracy_metric
 
             with open(
-                os.path.join(
-                    run_output_dir, f"epoch{epoch}.json"
-                ),
+                os.path.join(run_output_dir, f"epoch{epoch}.json"),
                 "w",
             ) as f:
                 json.dump(data, f)
@@ -193,7 +201,9 @@ def main():
     parser.add_argument("--num_epochs", type=int, default=10000)
     parser.add_argument("--init_scaling", type=float, default=1.0)
     parser.add_argument("--train_bsz", type=int, default=256)
-    parser.add_argument("--optimizer", type=str, default="adamw")
+    parser.add_argument(
+        "--optimizer", type=str, default="adamw", choices=["adamw", "sgd"]
+    )
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--eval_every", type=int, default=10)
     parser.add_argument("--weight_decay", type=float, default=1.0)

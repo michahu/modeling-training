@@ -3,12 +3,12 @@ from transformers import (
     BertTokenizer,
     BertForSequenceClassification,
     default_data_collator,
-    DataCollatorWithPadding,
 )
 from torch.utils.data import DataLoader
 from datasets import load_dataset
 from sklearn.metrics import accuracy_score
 
+import logging
 import argparse
 import glob
 import pandas
@@ -36,7 +36,7 @@ def evaluate(model, dataloader, device):
 
 
 def hans_eval(model_name, lexical_overlap, subsequence, constituent, cpu=False):
-    print(f"Model name: {model_name}")
+    logging.info(f"Model name: {model_name}")
     device = torch.device("cpu") if cpu else torch.device("cuda")
 
     model = BertForSequenceClassification.from_pretrained(model_name)
@@ -44,25 +44,24 @@ def hans_eval(model_name, lexical_overlap, subsequence, constituent, cpu=False):
     model.eval()
 
     lexical_overlap_accuracy = evaluate(model, lexical_overlap, device)
-    print(f"Lexical overlap accuracy: {lexical_overlap_accuracy}")
+    logging.info(f"Lexical overlap accuracy: {lexical_overlap_accuracy}")
     subsequence_accuracy = evaluate(model, subsequence, device)
-    print(f"Subsequence accuracy: {subsequence_accuracy}")
+    logging.info(f"Subsequence accuracy: {subsequence_accuracy}")
     constituent_accuracy = evaluate(model, constituent, device)
-    print(f"Constituent accuracy: {constituent_accuracy}")
+    logging.info(f"Constituent accuracy: {constituent_accuracy}")
 
     return lexical_overlap_accuracy, subsequence_accuracy, constituent_accuracy
 
 
 def main():
     bsz = 128
+    logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--model_dir", type=str, default="./data/raw/GLUE-output/MNLI/seed_0"
     )
-    parser.add_argument(
-        "--save_dir", type=str, default="./data/evals/"
-    )
+    parser.add_argument("--save_dir", type=str, default="./data/evals/")
     parser.add_argument("--max_seq_length", type=int, default=128)
     parser.add_argument("--cpu", action="store_true")
     args = parser.parse_args()
@@ -105,6 +104,7 @@ def main():
     constituent_accuracies = []
 
     for model_name in tqdm(glob.glob(args.model_dir + "/*")):
+        # steps should be the last part of the model name via huggingface
         steps.append(model_name.split("-")[-1])
         lexical, subsequence, constituent = hans_eval(
             model_name,

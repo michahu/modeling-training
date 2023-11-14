@@ -142,8 +142,7 @@ def get_matrix_metrics(X):
 
     l1 = get_flattened_l1_norm(X).item()
     l2 = get_flattened_l2_norm(X).item()
-    
-    
+
     trace = torch.trace(X).item()
     spectral = get_spectral_norm(X).item()
     singular_vals = torch.svd(X, compute_uv=False).S
@@ -163,14 +162,15 @@ def get_matrix_metrics(X):
         "singular_values": singular_vals.tolist(),
     }
 
+
 # assuming a 4D tensor
 def get_tensor_metrics(X):
     def get_average_l1_norm(x):
-        return torch.flatten(torch.linalg.vector_norm(x, ord=1, dim=(2,3)))
-    
+        return torch.flatten(torch.linalg.vector_norm(x, ord=1, dim=(2, 3)))
+
     def get_average_l2_norm(x):
-        return torch.flatten(torch.linalg.vector_norm(x, ord=2, dim=(2,3)))
-    
+        return torch.flatten(torch.linalg.vector_norm(x, ord=2, dim=(2, 3)))
+
     l1s = get_average_l1_norm(X)
     l2s = get_average_l2_norm(X)
     code_sparsities = l1s / l2s
@@ -180,6 +180,7 @@ def get_tensor_metrics(X):
         "l2": torch.mean(l2s).item(),
         "code_sparsity": torch.mean(code_sparsities).item(),
     }
+
 
 @torch.no_grad()
 def get_metrics_resnet18(model):
@@ -203,12 +204,12 @@ def get_metrics_resnet18(model):
     weights.append(model.fc.weight.flatten())
     biases.append(model.fc.bias.flatten())
 
-    data_dict['w_all'] = get_distribution_stats(torch.cat(weights))
-    data_dict['b_all'] = get_distribution_stats(torch.cat(biases))
+    data_dict["w_all"] = get_distribution_stats(torch.cat(weights))
+    data_dict["b_all"] = get_distribution_stats(torch.cat(biases))
 
     return data_dict
 
-    
+
 @torch.no_grad()
 def get_metrics_lenet5(model):
     data_dict = {
@@ -237,11 +238,10 @@ def get_metrics_lenet5(model):
     weights.append(model.fc3.weight.flatten())
     biases.append(model.fc3.bias.flatten())
 
-    data_dict['w_all'] = get_distribution_stats(torch.cat(weights))
-    data_dict['b_all'] = get_distribution_stats(torch.cat(biases))
+    data_dict["w_all"] = get_distribution_stats(torch.cat(weights))
+    data_dict["b_all"] = get_distribution_stats(torch.cat(biases))
 
     return data_dict
-
 
 
 @torch.no_grad()
@@ -264,10 +264,16 @@ def get_metrics_transformer(model, nheads):
         data_dict["ffn_out"].append({i: ffn_out})
 
     weights = torch.cat(
-        [concatenate_matrices(unpack_weights_transformer(layer)) for layer in model.blocks]
+        [
+            concatenate_matrices(unpack_weights_transformer(layer))
+            for layer in model.blocks
+        ]
     )
     biases = torch.cat(
-        [concatenate_matrices(unpack_biases_transformer(layer)) for layer in model.blocks]
+        [
+            concatenate_matrices(unpack_biases_transformer(layer))
+            for layer in model.blocks
+        ]
     )
 
     data_dict["w_all"] = get_distribution_stats(weights)
@@ -280,7 +286,7 @@ def get_distribution_stats(X):
     mean = torch.mean(X).item()
     var = torch.var(X).item()
     median = torch.median(X).item()
-    
+
     return {"mean": mean, "var": var, "median": median}
 
 
@@ -348,19 +354,13 @@ def get_metrics_hf_transformer(model):
     return data_dict
 
 
-def induction_head_loss(losses):
-    return (losses[..., 500] - losses[..., 50]).mean()
-
-
 @torch.no_grad()
 def get_lm_loss_hf_transformer(model, train_dataloader, device):
     data_dict = {
         "train_loss": [],
-        # "induction_head_loss_train": [],
     }
 
     train_loss = []
-    induction_head_loss_train = []
 
     for batch in train_dataloader:
         input_ids, attention_masks, labels = (
@@ -371,10 +371,7 @@ def get_lm_loss_hf_transformer(model, train_dataloader, device):
         # print(input_ids.shape, attention_masks.shape, labels.shape)
         loss = model(input_ids, attention_mask=attention_masks, labels=labels).loss
         train_loss.append(loss.item())
-        # doesn't really work because induction heads are an autoregressive construct
-        # induction_head_loss_train.append(induction_head_loss(loss))
 
     data_dict["train_loss"] = np.mean(train_loss)
-    # data_dict["induction_head_loss_train"] = np.mean(induction_head_loss_train)
 
     return data_dict

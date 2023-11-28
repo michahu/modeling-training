@@ -2,6 +2,8 @@
 
 Directly model training dynamics, then interpret the dynamics model.
 
+Check out our runnable [Colab demo!](https://colab.research.google.com/drive/1SFZNNGYwmvRF6TMzrEMk3cAhJh8H0WwN?usp=sharing)
+
 # Usage
 
 All these commands run from the main directory. If you want to run within a directory, you may need to change some imports.
@@ -87,12 +89,14 @@ This we do in Jupyter notebooks. Notebooks relevant to this step are labeled wit
 
 Thank you for your interest in our work! If you use this repo, please cite:
 ```
-@misc{hu2023latent,
-      title={Latent State Models of Training Dynamics}, 
-      author={Michael Y. Hu and Angelica Chen and Naomi Saphra and Kyunghyun Cho},
-      year={2023},
-      eprint={2308.09543},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@article{
+hu2023latent,
+title={Latent State Models of Training Dynamics},
+author={Michael Y. Hu and Angelica Chen and Naomi Saphra and Kyunghyun Cho},
+journal={Transactions on Machine Learning Research},
+issn={2835-8856},
+year={2023},
+url={https://openreview.net/forum?id=NE2xXWo0LF},
+note={}
 }
 ```

@@ -81,6 +81,7 @@ Argument glossary:
 ## Step 5: Analyze the HMM. 
 
 This we do in Jupyter notebooks. Notebooks relevant to this step are labeled with the `05_` tag.
+- `05_analyze_state_transitions.ipynb` computes feature movements and important features for state transitions.
 - `05_model_selection.ipynb` plots data writen from Step 4 in Seaborn.
 - `05_graph_analysis.ipynb` uses linear regression to assign coefficents to latent states (see Section 2.3 in the [paper](https://arxiv.org/abs/2308.09543)) 
 - `05_plot.ipynb` creates annotated training figures.
@@ -90,13 +91,13 @@ This we do in Jupyter notebooks. Notebooks relevant to this step are labeled wit
 Thank you for your interest in our work! If you use this repo, please cite:
 ```
 @article{
-hu2023latent,
-title={Latent State Models of Training Dynamics},
-author={Michael Y. Hu and Angelica Chen and Naomi Saphra and Kyunghyun Cho},
-journal={Transactions on Machine Learning Research},
-issn={2835-8856},
-year={2023},
-url={https://openreview.net/forum?id=NE2xXWo0LF},
-note={}
+    hu2023latent,
+    title={Latent State Models of Training Dynamics},
+    author={Michael Y. Hu and Angelica Chen and Naomi Saphra and Kyunghyun Cho},
+    journal={Transactions on Machine Learning Research},
+    issn={2835-8856},
+    year={2023},
+    url={https://openreview.net/forum?id=NE2xXWo0LF},
+    note={}
 }
 ```
